@@ -5,7 +5,7 @@ import json
 import numpy as np
 import scipy.ndimage as ndi
 import glob
-from phathom.utils import SharedMemory
+from eflash_2018.utils.shared_memory import SharedMemory
 import tifffile
 import tqdm
 

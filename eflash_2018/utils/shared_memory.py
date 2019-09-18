@@ -85,6 +85,7 @@ class SharedMemory:
             self.shape = shape
             self.dtype = dtype
 
+        @contextlib.contextmanager
         def txn(self):
             """ A contextual wrapper of the shared memory
 

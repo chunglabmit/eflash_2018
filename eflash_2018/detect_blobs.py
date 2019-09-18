@@ -1,13 +1,15 @@
-import multiprocessing
 import argparse
+import glob
 import itertools
 import json
+import multiprocessing
 import numpy as np
+import os
 import scipy.ndimage as ndi
-import glob
-from eflash_2018.utils.shared_memory import SharedMemory
 import tifffile
 import tqdm
+
+from eflash_2018.utils.shared_memory import SharedMemory
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -55,6 +57,14 @@ def parse_arguments():
                         type=int,
                         default=5,
                         help="Padding in the Z direction")
+    parser.add_argument("--n-io-cpus",
+                        type=int,
+                        default=min(os.cpu_count(), 12),
+                        help="Number of CPU processes used when reading images")
+    parser.add_argument("--n-cpus",
+                        type=int,
+                        default=os.cpu_count(),
+                        help="Number of CPU processes used when computing")
     return parser.parse_args()
 
 
@@ -111,14 +121,14 @@ def main():
         z0p = z0 - args.padding_z
         z1p = min(z1 + args.padding_z, z_extent)
         img_mem = SharedMemory((z1p-z0p, y_extent, x_extent), first_plane.dtype)
-        with multiprocessing.Pool(12) as pool:
+        with multiprocessing.Pool(args.n_io_cpus) as pool:
             futures = []
             for z in range(z0p, z1p):
                 futures.append(pool.apply_async(read_plane,
                                            (img_mem, files[z], z - z0p)))
             for future in tqdm.tqdm(futures, desc="Reading stack"):
                 future.get()
-        with multiprocessing.Pool() as pool:
+        with multiprocessing.Pool(args.n_cpus) as pool:
             futures = []
             for xi, yi in itertools.product(range(len(x0a)), range(len(y0a))):
                 futures.append(pool.apply_async(

@@ -23,10 +23,26 @@ def parse_arguments():
                         type=float,
                         default=4.0,
                         help="Sigma of the first Gaussian in the difference")
+    parser.add_argument("--dog-low-xy",
+                        type=float,
+                        help="Sigma of the first Gaussian in the X/Y direction "
+                        "for anisotropic volumes")
+    parser.add_argument("--dog-low-z",
+                        type=float,
+                        help="Sigma of the first Gaussian in the Z direction "
+                        "for anisotropic volumes")
     parser.add_argument("--dog-high",
                         type=float,
                         default=10.0,
                         help="Sigma of the second Gaussian in the difference")
+    parser.add_argument("--dog-high-xy",
+                        type=float,
+                        help="Sigma of the second Gaussian in the X/Y direction"
+                             " for anisotropic volumes")
+    parser.add_argument("--dog-high-z",
+                        type=float,
+                        help="Sigma of the second Gaussian in the Z direction "
+                             "for anisotropic volumes")
     parser.add_argument("--threshold",
                         type=float,
                         default=25.0,
@@ -98,6 +114,14 @@ def do_dog(imgmem, dog_low, dog_high,
 
 def main():
     args = parse_arguments()
+    if args.dog_low_xy is not None:
+        dog_low = (args.dog_low_z, args.dog_low_xy, args.dog_low_xy)
+    else:
+        dog_low = args.dog_low
+    if args.dog_high_xy is not None:
+        dog_high = (args.dog_high_z, args.dog_high_xy, args.dog_high_xy)
+    else:
+        dog_high = args.dog_high
     files = sorted(glob.glob(args.source))
     first_plane = tifffile.imread(files[0])
     x_extent = first_plane.shape[1]
@@ -133,7 +157,7 @@ def main():
             for xi, yi in itertools.product(range(len(x0a)), range(len(y0a))):
                 futures.append(pool.apply_async(
                     do_dog,
-                    (img_mem, args.dog_low, args.dog_high,
+                    (img_mem, dog_low, dog_high,
                      x0a[xi], x1a[xi], y0a[yi], y1a[yi], z0, z1,
                      x0p[xi], x1p[xi], y0p[yi], y1p[yi], z0p, z1p,
                      args.min_distance, args.threshold, args.invert)

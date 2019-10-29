@@ -24,9 +24,15 @@ detect-blobs \
     --source <source-expr> \
     --output <coords-file> \
     [--dog-low <dog-low-sigma>] \
+    [--dog-low-xy <dog-low-sigma-xy>] \
+    [--dog-low-z <dog-low-sigma-z>] \
     [--dog-high <dog-high-sigma>] \
+    [--dog-high-xy <dog-high-sigma-xy>] \
+    [--dog-high-z <dog-high-sigma-z>] \
     [--threshold <threshold>] \
     [--min-distance <min-distance>] \
+    [--min-distance-xy <min-distance-xy>] \
+    [--min-distance-z <min-distance-z>] \
     [--block-size-xy <block-size-xy>] \
     [--block-size-z <block-size-z>] \
     [--padding-xy <padding-xy>] \
@@ -41,14 +47,20 @@ lists where the inner list has the X, Y and Z coordinates of a putatitive cell
 in that order.
 * *dog-low-sigma* is the standard deviation of the Gaussian used to smooth the
 foreground of the image.
+* *dog-low-sigma-xy* and *dog-low-sigma-z* are the foreground standard
+deviations in the X/Y and Z directions if the volume is anisotropic
 * *dog-high-sigma* is the standard deviation of the Gaussian used to smooth the
 background of the image. The smoothed background is subtracted from the smoothed
 foreground to get the difference of Gaussians (dog).
+* *dog-high-sigma-xy* and *dog-high-sigma-z* are the background standard
+deviations in the X/Y and Z directions if the volume is anisotropic
 * *threshold* is the absolute cutoff for peak finding. Any peak must have a
 value above this threshold in the difference of Gaussians.
 * *min-distance* is the minimum distance in voxels between adjacent peaks. The
 peak with the higher intensity is chosen if two are within this distance. Large
 minimum distances can be computationally expensive.
+* *min-distance-xy* and *min-distance-z* are the minimum distances
+in the X/Y and Z directions if the volume is anisotropic
 * *block-size-xy* is the size of a processing block in the X and Y direction.
 The block size (block-size-xy * block-size-xy * block-size-z) times the number
 of cores times 8 should be less than your memory size.

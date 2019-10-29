@@ -51,6 +51,14 @@ def parse_arguments():
                         type=float,
                         default=3,
                         help="Minimum distance between blobs")
+    parser.add_argument("--min-distance-xy",
+                        type=float,
+                        help="Minimum distance between blobs in the X/Y "
+                             "directions for anisotropic volumes")
+    parser.add_argument("--min-distance-z",
+                        type=float,
+                        help="Minimum distance between blobs in the Z "
+                             "direction for anisotropic volumes")
     parser.add_argument("--invert",
                         action="store_true",
                         help="Invert the intensity of the difference of "
@@ -92,10 +100,15 @@ def read_plane(stackmem, filename, offset):
 def do_dog(imgmem, dog_low, dog_high,
            x0, x1, y0, y1, z0, z1, x0p, x1p, y0p, y1p, z0p, z1p,
            min_distance, threshold, invert):
-    imd = int(np.ceil(min_distance))
+    if np.isscalar(min_distance):
+        min_distance = (min_distance, min_distance, min_distance)
+    min_distance = np.asanyarray(min_distance)
+    imd = np.ceil(min_distance).astype(int)
     structure = np.sum(
-        np.square(np.mgrid[-imd:imd+1, -imd:imd+1, -imd:imd+1]), 0) <= \
-        np.square(min_distance)
+        np.square(np.mgrid[-imd[0]:imd[0]+1,
+                           -imd[1]:imd[1]+1,
+                           -imd[2]:imd[2]+1] /
+                  min_distance.reshape(3, 1, 1, 1)), 0) <= 1
     with imgmem.txn() as img:
         mini_img = img[:, y0p:y1p, x0p:x1p].astype(np.float32)
         dog = ndi.gaussian_filter(mini_img, dog_low) - \
@@ -122,6 +135,12 @@ def main():
         dog_high = (args.dog_high_z, args.dog_high_xy, args.dog_high_xy)
     else:
         dog_high = args.dog_high
+    if args.min_distance_xy is not None:
+        min_distance = (args.min_distance_z,
+                        args.min_distance_xy,
+                        args.min_distance_xy)
+    else:
+        min_distance = args.min_distance
     files = sorted(glob.glob(args.source))
     first_plane = tifffile.imread(files[0])
     x_extent = first_plane.shape[1]
@@ -160,7 +179,7 @@ def main():
                     (img_mem, dog_low, dog_high,
                      x0a[xi], x1a[xi], y0a[yi], y1a[yi], z0, z1,
                      x0p[xi], x1p[xi], y0p[yi], y1p[yi], z0p, z1p,
-                     args.min_distance, args.threshold, args.invert)
+                     min_distance, args.threshold, args.invert)
                 ))
             for future in tqdm.tqdm(futures, desc="Computing"):
                 points.append(future.get())

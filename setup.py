@@ -11,7 +11,9 @@ setup(
         "matplotlib",
         "scipy",
         "scikit-learn",
-        "scikit-image"
+        "scikit-image",
+        "tifffile",
+        "tqdm"
     ],
     author="Kwanghun Chung Lab",
     packages=["eflash_2018",

@@ -92,7 +92,7 @@ class SharedMemory:
             self.dtype = np.dtype(dtype)
             self.shm = multiprocessing.shared_memory.SharedMemory(
                 create=True,
-                size=np.prod(shape) * self.dtype.itemsize)
+                size=int(np.prod(shape) * self.dtype.itemsize))
             self.name = self.shm.name
 
         def __getstate__(self):

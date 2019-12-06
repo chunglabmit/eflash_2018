@@ -12,7 +12,7 @@ else:
 
 if sys.platform.startswith("linux"):
     is_linux = True
-else:
+elif not has_multiprocessing_shared_memory:
     raise NotImplementedError(
         "SharedMemory is only supported on Linux or Python 3.8+")
 

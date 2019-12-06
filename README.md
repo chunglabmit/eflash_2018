@@ -1,6 +1,6 @@
 # EFlash 2018
 
-[![Travis CI Status](https://travis-ci.com/chunglabmit/eflash-2018.svg?branch=master)](https://travis-ci.com/chunglabmit/eflash-2018)
+[![Travis CI Status](https://travis-ci.org/chunglabmit/eflash-2018.svg?branch=master)](https://travis-ci.org/chunglabmit/eflash-2018)
 
 This repository holds software used to analyze data for the Chung Lab's
 EFlash paper.

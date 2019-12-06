@@ -7,8 +7,10 @@ jobs:
       python: 3.8
 #    - os: windows
 #      python: 3.8
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install libhdf5-serial-dev
 install:
-  - apt-get install libhdf5-serial-dev
   - pip install -U pip
   - pip install --progress-bar off h5py
   - pip install --progress-bar off -r requirements.txt

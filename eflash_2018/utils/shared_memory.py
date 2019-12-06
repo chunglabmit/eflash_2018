@@ -2,12 +2,19 @@ import contextlib
 import os
 import numpy as np
 import sys
+import tempfile
+
+if sys.version >= "3.8":
+    has_multiprocessing_shared_memory = True
+    import multiprocessing.shared_memory
+else:
+    has_multiprocessing_shared_memory = False
+
 if sys.platform.startswith("linux"):
     is_linux = True
-    import tempfile
 else:
-    is_linux = False
-    import mmap
+    raise NotImplementedError(
+        "SharedMemory is only supported on Linux or Python 3.8+")
 
 
 class SharedMemory:
@@ -35,8 +42,8 @@ class SharedMemory:
         pool.apply_async(do_something, args)
 
     """
+    if not has_multiprocessing_shared_memory:
 
-    if is_linux:
         def __init__(self, shape, dtype):
             """Initializer
 
@@ -44,10 +51,11 @@ class SharedMemory:
 
             :param dtype: the data type of the array
             """
+            directory = "/dev/shm"
             self.tempfile = tempfile.NamedTemporaryFile(
                 prefix="proc_%d_" % os.getpid(),
                 suffix=".shm",
-                dir="/dev/shm",
+                dir=directory,
                 delete=True)
             self.pathname = self.tempfile.name
             self.shape = shape
@@ -60,9 +68,10 @@ class SharedMemory:
             :return: a view of the shared memory which has the shape and
             dtype given at construction
             """
-            memory = np.memmap(self.pathname,
-                               shape=self.shape,
-                               dtype=self.dtype)
+            with open(self.pathname, mode="r+b") as fd:
+                memory = np.memmap(fd,
+                                   shape=self.shape,
+                                   dtype=self.dtype)
             yield memory
             del memory
 
@@ -71,7 +80,6 @@ class SharedMemory:
 
         def __setstate__(self, args):
             self.pathname, self.shape, self.dtype = args
-
     else:
         def __init__(self, shape, dtype):
             """Initializer
@@ -80,10 +88,23 @@ class SharedMemory:
 
             :param dtype: the data type of the array
             """
-            length = np.prod(shape) * dtype.itemsize
-            self.mmap = mmap.mmap(-1, length)
             self.shape = shape
-            self.dtype = dtype
+            self.dtype = np.dtype(dtype)
+            self.shm = multiprocessing.shared_memory.SharedMemory(
+                create=True,
+                size=np.prod(shape) * self.dtype.itemsize)
+            self.name = self.shm.name
+
+        def __getstate__(self):
+            return self.name, self.shape, self.dtype
+
+        def __setstate__(self, args):
+            self.name, self.shape, self.dtype = args
+            self.shm = multiprocessing.shared_memory.SharedMemory(
+                name=self.name,
+                create=False,
+                size=np.prod(self.shape) * np.prod(self.dtype.itemsize))
+            self.i_am_a_clone = True
 
         @contextlib.contextmanager
         def txn(self):
@@ -92,6 +113,11 @@ class SharedMemory:
             :return: a view of the shared memory which has the shape and
             dtype given at construction
             """
-            memory = np.frombuffer(self.mmap, self.shape, self.dtype)
-            yield memory
-            del memory
+            a = np.ndarray(self.shape, self.dtype, buffer=self.shm.buf)
+            yield a
+
+        def __del__(self):
+            self.shm.close()
+            if not hasattr(self, "i_am_a_clone"):
+                self.shm.unlink()
+

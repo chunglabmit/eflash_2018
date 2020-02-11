@@ -1,3 +1,5 @@
+import sys
+
 import argparse
 import glob
 import itertools
@@ -11,7 +13,7 @@ import tqdm
 
 from eflash_2018.utils.shared_memory import SharedMemory
 
-def parse_arguments():
+def parse_arguments(args=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     parser.add_argument("--source",
                         required=True,
@@ -89,7 +91,7 @@ def parse_arguments():
                         type=int,
                         default=os.cpu_count(),
                         help="Number of CPU processes used when computing")
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def read_plane(stackmem, filename, offset):
@@ -125,8 +127,8 @@ def do_dog(imgmem, dog_low, dog_high,
         return np.column_stack((xca[mask], yca[mask], zca[mask]))
 
 
-def main():
-    args = parse_arguments()
+def main(args=sys.argv[1:]):
+    args = parse_arguments(args)
     if args.dog_low_xy is not None:
         dog_low = (args.dog_low_z, args.dog_low_xy, args.dog_low_xy)
     else:

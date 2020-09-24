@@ -204,5 +204,5 @@ where
 * **threshold** is a number between 0 and 1 which is the probability cutoff threshold
   for positives (higher = more restrictive)
 
-###Credits
+### Credits
 training.png made by Freepik from www.flaticon.com  
